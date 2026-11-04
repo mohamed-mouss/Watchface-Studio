@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.env
+skills
+PROJECT_CONTEXT.md

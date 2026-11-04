@@ -1,0 +1,107 @@
+{
+  "HoursHand": {
+    "X": 233,
+    "Y": 233,
+    "AnimationSpeed": 0,
+    "ImageIndex": 0,
+    "ImagesCount": 1,
+    "Type": 1,
+    "BlackIsTransparent": true,
+    "ArrowInfo": {
+      "ArrowFullLength": 162,
+      "ArrowLengthToCenter": 156,
+      "ArrowWidth": 24
+    }
+  },
+  "MinutesHand": {
+    "X": 233,
+    "Y": 233,
+    "AnimationSpeed": 0,
+    "ImageIndex": 1,
+    "ImagesCount": 1,
+    "Type": 2,
+    "BlackIsTransparent": true,
+    "ArrowInfo": {
+      "ArrowFullLength": 202,
+      "ArrowLengthToCenter": 196,
+      "ArrowWidth": 24
+    }
+  },
+  "SecondsHand": {
+    "X": 233,
+    "Y": 233,
+    "AnimationSpeed": 0,
+    "ImageIndex": 2,
+    "ImagesCount": 1,
+    "Type": 3,
+    "BlackIsTransparent": true,
+    "ArrowInfo": {
+      "ArrowFullLength": 255,
+      "ArrowLengthToCenter": 206,
+      "ArrowWidth": 34
+    }
+  },
+  "BatteryImages": {
+    "X": 206,
+    "Y": 351,
+    "AnimationSpeed": 0,
+    "ImageIndex": 3,
+    "ImagesCount": 5,
+    "Type": 8,
+    "BlackIsTransparent": true
+  },
+  "Preview": {
+    "X": 0,
+    "Y": 0,
+    "AnimationSpeed": 0,
+    "ImageIndex": 8,
+    "ImagesCount": 1,
+    "Type": 10,
+    "BlackIsTransparent": true
+  },
+  "MonthsNames": {
+    "X": 267,
+    "Y": 300,
+    "AnimationSpeed": 0,
+    "ImageIndex": 9,
+    "ImagesCount": 12,
+    "Type": 12,
+    "BlackIsTransparent": true
+  },
+  "DayDigits": {
+    "X": 223,
+    "Y": 300,
+    "AnimationSpeed": 0,
+    "ImageIndex": 21,
+    "ImagesCount": 14,
+    "Type": 13,
+    "BlackIsTransparent": true
+  },
+  "DaysOfWeek": {
+    "X": 156,
+    "Y": 300,
+    "AnimationSpeed": 0,
+    "ImageIndex": 35,
+    "ImagesCount": 14,
+    "Type": 15,
+    "BlackIsTransparent": true
+  },
+  "Background": {
+    "X": 0,
+    "Y": 0,
+    "AnimationSpeed": 0,
+    "ImageIndex": 49,
+    "ImagesCount": 1,
+    "Type": 17,
+    "BlackIsTransparent": true
+  },
+  "StepsDigits": {
+    "X": 189,
+    "Y": 144,
+    "AnimationSpeed": 0,
+    "ImageIndex": 21,
+    "ImagesCount": 14,
+    "Type": 25,
+    "BlackIsTransparent": true
+  }
+}
