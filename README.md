@@ -99,6 +99,20 @@ npm run dev
 npm run build
 ```
 
+### Create a Windows Installer
+
+On Windows, run:
+
+```bash
+npm run make
+```
+
+This builds the renderer and creates a Windows installer under `out/make/`.
+The installer is not code-signed, so Windows SmartScreen may show an
+"unrecognized app" warning. Avoiding that warning generally requires signing
+the app with a trusted code-signing certificate; signing does not guarantee
+that SmartScreen warnings disappear immediately.
+
 ### Launch Electron
 
 After building the renderer:

@@ -1,21 +1,56 @@
 {
   "name": "watchface-editor",
   "version": "1.0.0",
+  "description": "Desktop editor for GloryFit-compatible smartwatch watch faces.",
+  "author": "mohamed-mouss",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "node electron/dev.js",
     "dev:web": "vite --host 127.0.0.1",
     "build": "vite build",
+    "make": "npm run build && electron-forge make",
     "test": "node --test"
   },
   "dependencies": {
-    "electron": "^30.0.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
   "devDependencies": {
-    "vite": "^6.0.0",
-    "@vitejs/plugin-react": "^4.3.0"
+    "electron": "^30.0.0",
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^6.0.0"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "asar": true,
+        "ignore": [
+          "^/\\.git($|/)",
+          "^/src($|/)",
+          "^/test($|/)",
+          "^/tests($|/)",
+          "^/skills($|/)",
+          "^/wfcompress($|/)",
+          "^/bin-dafit($|/)",
+          "^/Watchface-Studio($|/)",
+          "^/CMakeLists\\.txt$",
+          "^/wfeditormk66\\.cbp$",
+          "^/PROJECT_CONTEXT\\.md$",
+          "^/README\\.md$",
+          "^/LICENSE$"
+        ]
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "setupIcon": "icons/tick tack.ico"
+          }
+        }
+      ]
+    }
   }
 }

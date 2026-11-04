@@ -1,5 +1,7 @@
 node_modules/
 dist/
-.env
-skills
+out/
+.env/
+Watchface-Studio/
+skills/
 PROJECT_CONTEXT.md
