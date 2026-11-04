@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=windows,electron,react,js)](https://skillicons.dev" />
+    <img src="https://skillicons.dev/icons?i=windows,electron,react,js,)](https://skillicons.dev" />
   </a>
 </p>
 
