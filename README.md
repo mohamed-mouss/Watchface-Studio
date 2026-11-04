@@ -10,12 +10,7 @@
   Create, customize, preview, and export watch faces with an intuitive desktop editor.
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Desktop-blue?style=flat-square" alt="Platform">
-  <img src="https://img.shields.io/badge/Electron-Desktop%20App-47848F?style=flat-square&logo=electron" alt="Electron">
-  <img src="https://img.shields.io/badge/React-Powered-61DAFB?style=flat-square&logo=react" alt="React">
-  <img src="https://img.shields.io/badge/License-Open%20Source-green?style=flat-square" alt="Open Source">
-</p>
+[![build with](https://skillicons.dev/icons?i=windows,electron,react,js)](https://skillicons.dev)
 
 ---
 
