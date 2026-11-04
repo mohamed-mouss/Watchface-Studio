@@ -10,7 +10,11 @@
   Create, customize, preview, and export watch faces with an intuitive desktop editor.
 </p>
 
-[![build with](https://skillicons.dev/icons?i=windows,electron,react,js)](https://skillicons.dev)
+<p align="center">
+  <a href="https://skillicons.dev">
+    <img src="https://skillicons.dev/icons?i=windows,electron,react,js)](https://skillicons.dev" />
+  </a>
+</p>
 
 ---
 
