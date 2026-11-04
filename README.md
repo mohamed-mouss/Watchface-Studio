@@ -1,3 +1,5 @@
+![image](https://github.com/mohamed-mouss/Watchface-Studio/images/watchface-studio.png)
+
 # Credits and Attribution
 
 This project is based on the original work by [janaboy74](https://github.com/janaboy74).
@@ -14,7 +16,7 @@ This version includes significant modifications, new features, enhancements, and
 - Fixed bugs and optimized existing functionality
 
 
-![image](https://github.com/janaboy74/wfeditormk66/assets/54952408/f9b74273-6cd8-4427-b086-459cfb1435c8)
+![image](https://github.com/mohamed-mouss/Watchface-Studio/images/app.png)
 
 
 # Summary
