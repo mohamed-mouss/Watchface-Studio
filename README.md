@@ -1,140 +1,387 @@
-![image](https://github.com/mohamed-mouss/Watchface-Studio/images/watchface-studio.png)
+# ⌚ Watchface Studio
 
-# Credits and Attribution
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mohamed-mouss/Watchface-Studio/refs/heads/main/images/watchface%20studi.png" alt="Watchface Studio — Banner" width="100%">
+</p>
 
-This project is based on the original work by [janaboy74](https://github.com/janaboy74).
+<p align="center">
+  **A powerful watch face editor for GloryFit-compatible smartwatches.**
+  <br>
+  Create, customize, preview, and export watch faces with an intuitive desktop editor.
+</p>
 
-Original repository: [wfeditormk66](https://github.com/janaboy74/wfeditormk66)
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Desktop-blue?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/Electron-Desktop%20App-47848F?style=flat-square&logo=electron" alt="Electron">
+  <img src="https://img.shields.io/badge/React-Powered-61DAFB?style=flat-square&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/License-Open%20Source-green?style=flat-square" alt="Open Source">
+</p>
 
-This version includes significant modifications, new features, enhancements, and bug fixes.
+---
 
-## Major Improvements
+## 🖥️ Application Preview
 
-- Added new features and functionality
-- Improved performance and code quality
-- Enhanced user interface and user experience
-- Fixed bugs and optimized existing functionality
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mohamed-mouss/Watchface-Studio/refs/heads/main/images/app.png" alt="Watchface Studio Application Screenshot" width="100%">
+</p>
 
+---
 
-![image](https://github.com/mohamed-mouss/Watchface-Studio/images/app.png)
+## ✨ About the Project
 
+**Watchface Studio** is an open-source watch face editor designed for GloryFit and GloryFit Pro compatible smartwatches.
 
-# Summary
-This project Open-source watch face editor for GloryFit or GloryFitpro compatible .bin watch faces, with support for multiple devices and compression versions.
-- A React / Electron desktop interface is also available for editing supported BIN watch faces.
-- This software comes with no warranty. Use it at own risk.
-- I am not responsible of any damage on the device.
+It allows you to edit, customize, and export `.bin` watch face files while supporting multiple devices and compression formats.
 
-## Supported watch faces.
-- Kieslect Kr Pro (verified)
-- kieslect K11
-- MK66
-- MK68
-- QX11
-- P32D
+The project includes two editing solutions:
 
-## React / Electron editor
-The desktop editor supports the MK66 / QX11 / P32D BIN format used by the C++ application, including its supported compressed watch-face data. It also opens and exports the supplied Da Fit Type C (`0x81` / `0x84`) BIN format as a separate format path.
+- **C++ Editor:** The original native watch face editing application.
+- **React / Electron Editor:** A modern desktop interface with enhanced editing capabilities and project management.
 
-From the repository root:
+## 🚀 Features
 
-```sh
+- 🎨 Edit and customize existing watch faces.
+- 🖼️ Import and replace PNG images and sprite collections.
+- ➕ Add, remove, duplicate, and reposition supported elements.
+- 📦 Import and export BIN watch face files.
+- 🔄 Support compressed and uncompressed watch face data.
+- 👁️ Live watch face preview.
+- 📐 Smart alignment guides and positioning controls.
+- 🧩 Import elements from other BIN files and projects.
+- 💾 Save editable `.wfproj` projects.
+- 🎛️ Adjustable editor panels and an expanded editing canvas.
+- 🕒 Preview analog hands, date, and time elements.
+
+## ⌚ Supported Devices
+
+| Device | Compatibility |
+|---|---|
+| Kieslect KR Pro | ✅ Verified |
+| Kieslect K11 | Supported |
+| MK66 | Supported |
+| MK68 | Supported |
+| QX11 | Supported |
+| P32D | Supported |
+
+*Compatibility depends on the watch face format and device firmware.*
+
+---
+
+## 🖥️ React / Electron Desktop Editor
+
+The desktop editor supports the MK66 / QX11 / P32D BIN format used by the C++ application, including supported compressed watch face data.
+
+It also supports the supplied Da Fit Type C (`0x81` / `0x84`) BIN format through a separate format path.
+
+### Installation
+
+**Requirements**
+- Node.js
+- npm
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/mohamed-mouss/Watchface-Studio.git
+cd Watchface-Studio
 npm install
+```
+
+### Run in Development Mode
+
+```bash
 npm run dev
 ```
 
-`npm run build` creates the renderer in `dist`; run `npm start` after building to launch the Electron window. `npm test` runs the watch-face format tests.
+### Build the Application
 
-The editor supports repositioning existing BIN elements, replacing PNG sprites, adding supported element types, deleting elements, saving editable `.wfproj` projects, and exporting `.bin` files. Add an empty watch element from Project Contents, select it, then use **Add** in Image Collection to import one or more same-sized PNG frames (use Ctrl-click or Shift-click to multi-select). **Add element with PNG** is also available for a single image or vertical sprite sheet. **Import from BIN / project…** opens a source watch preview and lets you select multiple image-backed elements from another BIN, Watchface Studio project, or ClockFaceEdit JSON project. Imported elements retain their image frames, dimensions, positions, and transparency. Duplicate element types can be edited and saved in `.wfproj` projects, but the MK66 BIN format identifies blocks by a unique type ID; MK66 BIN export stays disabled until duplicates are removed. Use **Same as…** and **Copy all images** to copy an element's complete image collection. Background elements default to opaque black in the editor; other imported items preserve their source transparency setting. Change **BlackIsTransparent** in Block Properties if needed. Position-only edits retain the original BIN payload and compression. When editing image data or the item table of a compressed BIN, the editor recompresses the item types supported by the source format; other item types remain raw. The checksum is recalculated.
+```bash
+npm run build
+```
 
-Da Fit Type C files use a 240 × 240 round preview, RGB565 image decoding, and the Type C layer/blob tables. Positions can be edited and exported while unchanged image blobs and their RLE/raw encodings are retained. Replacing an image frame writes it back using that frame's source encoding; Type C element families have fixed frame counts, so individual frames cannot be added, deleted, or reordered. The editor recognizes the four Type C sample BINs in `bin-dafit/`; unknown single-frame layer codes are preserved, but device-specific animation behavior and unsupported multi-frame codes are not interpreted. Adding elements to a Type C BIN is supported only from another Type C BIN/project.
+### Launch Electron
 
-The interface uses the SF Pro system font when available, with native system font fallbacks on Windows and other platforms; Apple does not permit redistribution of SF fonts with this project.
+After building the renderer:
 
-Square BIN dimensions default to a circular preview; other dimensions default to a rounded preview. Change the **Preview shape** selector in the device panel to override the preview shape. Canvas pixel dimensions and aspect ratio are read from the BIN header. The preview shape is editor-only and does not change the BIN's dimensions or mask.
+```bash
+npm start
+```
 
-On startup and when choosing **New**, the editor loads `Default/Default screen.bin`, the included 466 × 466 Kieslect-compatible starter face. Selecting a device profile resizes non-BIN canvases; opened BINs and the starter retain their embedded dimensions. While dragging a block, magenta smart guides snap its edges or center to the watch-face bounds and other visible blocks. Use the six **Align to face** controls to align a selected block to the left, horizontal center, right, top, vertical center, or bottom of the canvas.
+### Run Tests
 
-The **Import from BIN / project…** helper opens another watch face or project, previews its layers, and lets you choose which elements to add to the current face.
+```bash
+npm test
+```
 
-The ClockFaceEdit preview follows the original renderer's layer order and element behavior: analog hands rotate around their stored hand pivots, date/time digits use the current local time, and selection bounds and dragging follow the transformed hand position. Health, activity, and battery values use the sample defaults from the original renderer because live watch data is unavailable in the editor.
+---
 
-The four editor panels start wider to give the device preview, block list, properties, and image collection more room. Drag the vertical dividers between Device, Project Contents, Block Properties, and Image Collection to resize the panels; dividers also support the left and right arrow keys when focused. Drag blocks in Project Contents to change their preview stacking order. This order is saved in `.wfproj` projects; the watch BIN format uses device-defined rendering order and does not store custom layer order.
+## 🛠️ Editor Capabilities
 
-Use **Expand** beside the device-panel watch preview to open a large editing canvas. Drag elements on the enlarged face, zoom in or out, choose **Fit** to fit it to the window, and press Escape or **Close** to return to the panels.
+### Element Editing
 
-Incomplete uncompressed sprite data is recovered with missing pixels shown as transparent black; the status bar reports affected items, and exporting rebuilds a complete BIN. Compressed data that cannot be decoded remains an error rather than being silently repaired. `.json` files import either Watchface Studio projects (`format: "wfeditormk66-project"`, `version: 1`, and a `layers` array) or ClockFaceEdit `_WatchFace.json` projects with their numbered PNG assets beside the JSON; importing the latter creates an editable, exportable BIN. Other JSON project formats are not currently supported. The built-in sample is a project mockup, not a valid watch-face BIN.
+- Reposition existing BIN elements.
+- Replace PNG sprites.
+- Add supported element types.
+- Delete unwanted elements.
+- Edit element properties and positions.
+- Change image transparency settings.
+- Copy image collections between elements.
 
-## Usage
-Menu:
+### Image Management
+
+- Import one or multiple PNG frames.
+- Import single images or vertical sprite sheets.
+- Replace existing image collections.
+- Copy complete image collections using **Same as…** and **Copy all images**.
+- Preserve transparency settings for imported elements.
+
+To import multiple frames, first add an empty watch element from Project Contents, select it, then use **Add** in Image Collection.
+
+Use `Ctrl-click` or `Shift-click` to select multiple same-sized PNG files.
+
+### Importing Existing Projects
+
+Use **Import from BIN / project…** to open another watch face and preview its layers.
+
+You can import selected image-backed elements from:
+
+- Another BIN watch face.
+- Watchface Studio `.wfproj` projects.
+- ClockFaceEdit JSON projects.
+
+Imported elements retain their images, dimensions, positions, and transparency.
+
+### Project Management
+
+The editor supports saving editable `.wfproj` projects.
+
+Duplicate element types can be edited and saved in project files. However, the MK66 BIN format requires unique type IDs, so exporting to MK66 BIN remains disabled until duplicate types are removed.
+
+### Preview & Canvas
+
+- Square BIN dimensions default to a circular preview.
+- Other dimensions default to a rounded preview.
+- Preview shape can be changed using the **Preview shape** selector.
+- Canvas dimensions and aspect ratio are read from the BIN header.
+- Preview shape is editor-only and does not modify the BIN dimensions or mask.
+
+Use **Expand** beside the device preview to open a larger editing canvas.
+
+The expanded canvas supports:
+- Dragging elements.
+- Zooming in and out.
+- Fit-to-window mode.
+- Escape or Close to return to the editor panels.
+
+### Alignment & Positioning
+
+Magenta smart guides help align elements with:
+- Watch face boundaries.
+- Other visible elements.
+- Horizontal and vertical centers.
+
+Six **Align to face** controls are available:
+
+- Align Left
+- Center Horizontally
+- Align Right
+- Align Top
+- Center Vertically
+- Align Bottom
+
+### Editor Layout
+
+The four editor panels are:
+
+1. Device
+2. Project Contents
+3. Block Properties
+4. Image Collection
+
+Drag the vertical dividers to resize panels. Focused dividers also support the left and right arrow keys.
+
+Drag elements in Project Contents to change their preview stacking order. This order is saved in `.wfproj` projects.
+
+**Note:** The watch BIN format uses device-defined rendering order and does not store custom layer order.
+
+---
+
+## 🎨 Preview & Rendering Details
+
+The ClockFaceEdit preview follows the original renderer's layer order and element behavior.
+
+- Analog hands rotate around their stored pivots.
+- Date and time digits use the current local time.
+- Selection bounds and dragging follow transformed hand positions.
+- Health, activity, and battery values use sample defaults because live watch data is unavailable in the editor.
+
+### Default Watch Face
+
+On startup and when selecting **New**, the editor loads:
+
+`Default/Default screen.bin`
+
+This is the included 466 × 466 Kieslect-compatible starter watch face.
+
+Selecting a device profile resizes non-BIN canvases. Opened BIN files and the starter watch face retain their embedded dimensions.
+
+---
+
+## 📂 Supported Project Formats
+
+| Format | Support |
+|---|---|
+| MK66 / QX11 / P32D BIN | Import and export |
+| Supported compressed BIN data | Import and export |
+| Da Fit Type C BIN (`0x81` / `0x84`) | Import and export |
+| Watchface Studio `.wfproj` | Import and export |
+| ClockFaceEdit `_WatchFace.json` | Import |
+
+ClockFaceEdit JSON projects require their numbered PNG assets to be located beside the JSON file.
+
+Other JSON project formats are currently not supported.
+
+### BIN Data Handling
+
+- Position-only edits preserve the original BIN payload and compression.
+- Editing image data or the item table recompresses item types supported by the source format.
+- Other item types remain raw.
+- The checksum is recalculated during export.
+- Incomplete uncompressed sprite data is recovered with missing pixels represented as transparent black.
+- The status bar reports affected items.
+- Compressed data that cannot be decoded is reported as an error rather than silently repaired.
+
+**Important:** The built-in sample is a project mockup, not a valid watch face BIN.
+
+---
+
+## 📖 Original C++ Editor Usage
+
+### Menu
+
 | Item | Description |
-| :---: | :---: |
-| Load bin | Load the watch face bin file |
-| Sace bin | Save the watch face bin file |
-| Quit | Quit application |
-| About | About the program |
+|---|---|
+| Load BIN | Load a watch face BIN file |
+| Save BIN | Save the current watch face |
+| Quit | Exit the application |
+| About | Display application information |
 
-Toolbar #1:
+### Toolbar #1
+
 | Item | Description |
-| :---: | :---: |
-| Item Types | Watchface item types |
-| Load | Load the item png file |
-| Sace | Save the item png file |
-| New Item Types | New watchface item types |
-| Add | Add new watchface item type |
-| Del | Delete old watchface item type |
-| X pos | X position of the item |
-| Y Pos | Y position of the item |
-| Shift | Item list vertical shift |
+|---|---|
+| Item Types | Watch face item types |
+| Load | Load an item PNG file |
+| Save | Save the item PNG file |
+| New Item Types | Create new watch face item types |
+| Add | Add a watch face item type |
+| Del | Delete a watch face item type |
+| X Pos | Set horizontal position |
+| Y Pos | Set vertical position |
+| Shift | Adjust item list vertical shift |
 
-Toolbar #2:
+### Toolbar #2
+
 | Item | Description |
-| :---: | :---: |
-| Delta height | Delta height for item images |
-| Add height | Add the delta height for item images |
-| Default value | Default value for the item preview |
+|---|---|
+| Delta Height | Adjust the height delta for item images |
+| Add Height | Add the delta height to item images |
+| Default Value | Set the default value for item preview |
 
-Keys:
-| Key | Description |
-| :---: | :---: |
-| Esc | Clear item parameters |
-| F1 | Preview mode |
-| F2 | Details mode |
-| q | Previous file in the Watchfaces subfolder. |
-| w | Next file in the Watchfaces subfolder. |
-| c | Create preview image. |
-| d | Switch debug mode( the preview contains IDs instead of test values ). |
-| numpad - | spin button sub ( shift -> accel ) |
-| numpad + | spin button add ( shift -> accel ) |
-| page down | fast spin button sub |
-| page up | fast spin button add |
-| cursors | moving the selected item ( shift -> accel ) |
-| shift + mouse | drag the selected item |
+### Keyboard Shortcuts
 
----
-### Upload the watchface
-#### Prerequisites for the android devices
-- Glory Fit
-- A file manager
-#### Steps
-- Download watchface(s) with Glory Fit.
-- Use the file manager to download the watchfaces /Android/data/com.yc.gloryfit/files in the Main Storage to your pc ( you need to add permissions for the file manager to the gloryfit folder ).
-- Edit the watchface with the editor.
-- Replace an existing watchface with the edited one.
-- Sync the watchface with the Glory Fit application.
-- Done.
-
-I have not found other way to upload custom watchface to the MK66.<br />
-If someone has a better solution please share it with me and I will publish it.
+| Key | Action |
+|---|---|
+| `Esc` | Clear item parameters |
+| `F1` | Preview mode |
+| `F2` | Details mode |
+| `Q` | Previous file in Watchfaces folder |
+| `W` | Next file in Watchfaces folder |
+| `C` | Create preview image |
+| `D` | Toggle debug mode |
+| `Numpad -` | Decrease spin button value |
+| `Numpad +` | Increase spin button value |
+| `Page Down` | Fast decrease |
+| `Page Up` | Fast increase |
+| Arrow Keys | Move selected item |
+| `Shift` + Arrow Keys | Accelerated movement |
+| `Shift` + Mouse | Drag selected item |
 
 ---
-### Brief compilation instructions:
-- The compilation requires cmake and gtkmm3.
-- For windows I have used MSys: https://www.msys2.org
-- You need to install for both windows and for linux development packages as well.
+
+## 📲 Installing a Watch Face on Your Android Device
+
+### Requirements
+
+- Android smartphone.
+- Glory Fit application.
+- File manager with access to Android application folders.
+- A compatible smartwatch.
+
+### Installation Steps
+
+1. Download a watch face using the Glory Fit application.
+2. Open your file manager.
+3. Navigate to:
+
+   ```text
+   Android/data/com.yc.gloryfit/files
+   ```
+
+4. Copy the downloaded watch face files to your PC.
+
+   *You may need to grant your file manager permission to access the Glory Fit folder.*
+
+5. Open the BIN file in Watchface Studio.
+6. Make your desired modifications.
+7. Replace the original watch face file with your edited version.
+8. Open Glory Fit and synchronize the watch face with your smartwatch.
+
+**Enjoy your customized watch face!** 🎉
+
 ---
-János
+
+## ⚠️ Disclaimer
+
+- This software is provided **AS IS**, without any warranty.
+- Use it at your own risk.
+- The author is not responsible for damage to your smartwatch or loss of data.
+- Always keep a backup of your original watch face files before editing.
+
 ---
-It took 3 days until the editor was fully functional + an addition day until I found the right checksum routine waht is stored in the file.<br>
-I invested around an additional week for refinements and rework until its final usable state.<br>
-It took another day to implement the decompression of compressed watchfaces.
+
+## 🙏 Credits & Attribution
+
+This project is based on the original work by **[janaboy74](https://github.com/janaboy74)**.
+
+**Original repository:** [wfeditormk66](https://github.com/janaboy74/wfeditormk66)
+
+This version includes significant modifications, new features, enhancements, and bug fixes.
+
+### Improvements
+
+- Added new features and functionality.
+- Improved performance and code quality.
+- Enhanced the user interface and user experience.
+- Fixed bugs and optimized existing functionality.
+
+Special thanks to the original author for making this project possible.
+
+---
+
+## ⭐ Support the Project
+
+If you find Watchface Studio useful:
+
+- ⭐ Star this repository.
+- 🐛 Report bugs and issues.
+- 💡 Suggest new features.
+- 🤝 Contribute improvements.
+
+**Made for smartwatch enthusiasts who love customization.** ❤️
+
+<p align="center">
+  <b>Watchface Studio</b>
+  <br>
+  Customize your watch. Make it yours.
+</p>
