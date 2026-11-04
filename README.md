@@ -18,7 +18,7 @@
 
 ---
 
-## 🖥️ Application Preview
+## 🖥️ App Preview
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/mohamed-mouss/Watchface-Studio/refs/heads/main/images/app.png" alt="Watchface Studio Application Screenshot" width="100%">
