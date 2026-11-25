@@ -1,6 +1,9 @@
 const HEADER_SIZE = 24;
 const ITEM_SIZE = 24;
 const COMPRESS_FORMAT = 0x02ff0100;
+const LZ4_COMPRESS_FORMAT = 0x03ff0100;
+const LZ4_FRAME_HEADER_SIZE = 20;
+const LZ4_FRAME_MAGIC = 0xcccc0102;
 const ITEM_NAMES = {
   1: 'Hour hand',
   2: 'Minute hand',
@@ -273,7 +276,89 @@ function decodeCompressedImage(bytes, start, width, height) {
   return { image, packedPixels, blockSize };
 }
 
-function decodeItemImages(bytes, item, isCompressed) {
+function decodeLz4Block(bytes, start, compressedSize, outputSize) {
+  const end = start + compressedSize;
+  assert(start >= 0 && compressedSize > 0 && end <= bytes.length, 'LZ4 image data is incomplete.');
+  const output = new Uint8Array(outputSize);
+  let inputOffset = start;
+  let outputOffset = 0;
+
+  const readLength = (length) => {
+    if (length !== 15) return length;
+    let extension;
+    do {
+      assert(inputOffset < end, 'LZ4 image data has an incomplete length.');
+      extension = bytes[inputOffset];
+      inputOffset += 1;
+      length += extension;
+    } while (extension === 255);
+    return length;
+  };
+
+  while (inputOffset < end) {
+    const token = bytes[inputOffset];
+    inputOffset += 1;
+    const literalLength = readLength(token >>> 4);
+    assert(inputOffset + literalLength <= end, 'LZ4 image literals are truncated.');
+    assert(outputOffset + literalLength <= outputSize, 'LZ4 image data expands beyond its dimensions.');
+    output.set(bytes.subarray(inputOffset, inputOffset + literalLength), outputOffset);
+    inputOffset += literalLength;
+    outputOffset += literalLength;
+
+    if (inputOffset === end) break;
+    assert(inputOffset + 2 <= end, 'LZ4 image match offset is truncated.');
+    const matchOffset = bytes[inputOffset] | (bytes[inputOffset + 1] << 8);
+    inputOffset += 2;
+    assert(matchOffset > 0 && matchOffset <= outputOffset, 'LZ4 image data contains an invalid match offset.');
+
+    const matchLength = readLength(token & 0x0f) + 4;
+    assert(outputOffset + matchLength <= outputSize, 'LZ4 image data expands beyond its dimensions.');
+    for (let index = 0; index < matchLength; index += 1) {
+      output[outputOffset] = output[outputOffset - matchOffset];
+      outputOffset += 1;
+    }
+  }
+
+  assert(outputOffset === outputSize, 'LZ4 image data does not match its dimensions.');
+  return output;
+}
+
+function decodeLz4Image(bytes, start, item) {
+  assert(start + LZ4_FRAME_HEADER_SIZE <= bytes.length, `LZ4 image frame for ${item.name} is incomplete.`);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const frameOffset = readU32(view, start);
+  const width = readU16(view, start + 4);
+  const height = readU16(view, start + 6);
+  const pixelFormat = readU32(view, start + 8);
+  const compressedSize = readU32(view, start + 12);
+  const magic = readU32(view, start + 16);
+  assert(frameOffset === start, `LZ4 image frame for ${item.name} has an invalid offset.`);
+  assert(width === item.width && height === item.height, `LZ4 image frame for ${item.name} has invalid dimensions.`);
+  assert(magic === LZ4_FRAME_MAGIC, `LZ4 image frame for ${item.name} has an unknown header.`);
+  assert(pixelFormat === 0x200 || pixelFormat === 0x301, `LZ4 image frame for ${item.name} uses an unsupported pixel format.`);
+  const bytesPerPixel = pixelFormat === 0x301 ? 3 : 2;
+  const decoded = decodeLz4Block(
+    bytes,
+    start + LZ4_FRAME_HEADER_SIZE,
+    compressedSize,
+    width * height * bytesPerPixel,
+  );
+  const image = new Uint8ClampedArray(width * height * 4);
+  const packedPixels = new Uint16Array(width * height);
+
+  for (let pixel = 0; pixel < packedPixels.length; pixel += 1) {
+    const offset = pixel * bytesPerPixel;
+    const packed = decoded[offset] | (decoded[offset + 1] << 8);
+    const rgba = decodePackedColor(packed, pixelFormat === 0x301 || item.copyImage);
+    if (pixelFormat === 0x301) rgba[3] = decoded[offset + 2];
+    image.set(rgba, pixel * 4);
+    packedPixels[pixel] = packed;
+  }
+
+  return { image, packedPixels, blockSize: LZ4_FRAME_HEADER_SIZE + compressedSize, pixelFormat };
+}
+
+function decodeItemImages(bytes, item, compressionFormat) {
   const pixelCount = item.width * item.height;
   const imageCount = item.imgCount;
   assert(pixelCount > 0 && pixelCount * imageCount <= 16_000_000, `Item ${item.id} has an invalid image size.`);
@@ -282,7 +367,19 @@ function decodeItemImages(bytes, item, isCompressed) {
   const images = [];
   const packedPixels = new Uint16Array(pixelCount * imageCount);
   let cursor = item.offset;
-  if (isCompressed && (item.id >= 4 && item.id <= 42 || [47, 48, 71].includes(item.id))) {
+  if (compressionFormat === 'lz4') {
+    const frameFormats = [];
+    for (let imageIndex = 0; imageIndex < imageCount; imageIndex += 1) {
+      const decoded = decodeLz4Image(bytes, cursor, item);
+      images.push(decoded.image);
+      packedPixels.set(decoded.packedPixels, imageIndex * pixelCount);
+      frameFormats.push(decoded.pixelFormat);
+      cursor += decoded.blockSize;
+    }
+    return { images, packedPixels, frameFormats };
+  }
+
+  if (compressionFormat === 'legacy' && (item.id >= 4 && item.id <= 42 || [47, 48, 71].includes(item.id))) {
     for (let imageIndex = 0; imageIndex < imageCount; imageIndex += 1) {
       const decoded = decodeCompressedImage(bytes, cursor, item.width, item.height);
       images.push(decoded.image);
@@ -360,6 +457,148 @@ function compressImage(pixels, width, height) {
     rowOffset += rows[y].length;
   }
   return block;
+}
+
+function compressLz4Block(bytes) {
+  let output = new Uint8Array(Math.max(32, bytes.length + Math.ceil(bytes.length / 255) + 16));
+  let outputLength = 0;
+  const ensureCapacity = (additional) => {
+    if (outputLength + additional <= output.length) return;
+    let capacity = output.length;
+    while (capacity < outputLength + additional) capacity *= 2;
+    const expanded = new Uint8Array(capacity);
+    expanded.set(output.subarray(0, outputLength));
+    output = expanded;
+  };
+  const writeByte = (value) => {
+    ensureCapacity(1);
+    output[outputLength] = value;
+    outputLength += 1;
+  };
+  const writeBytes = (start, end) => {
+    ensureCapacity(end - start);
+    output.set(bytes.subarray(start, end), outputLength);
+    outputLength += end - start;
+  };
+  const writeExtendedLength = (length) => {
+    while (length >= 255) {
+      writeByte(255);
+      length -= 255;
+    }
+    writeByte(length);
+  };
+  const hashAt = (offset) => {
+    const sequence = (
+      bytes[offset]
+      | (bytes[offset + 1] << 8)
+      | (bytes[offset + 2] << 16)
+      | (bytes[offset + 3] << 24)
+    ) >>> 0;
+    return Math.imul(sequence, 2654435761) >>> 16;
+  };
+
+  const matches = new Int32Array(1 << 16);
+  matches.fill(-1);
+  let anchor = 0;
+  let cursor = 0;
+
+  while (cursor <= bytes.length - 12) {
+    const hash = hashAt(cursor);
+    const match = matches[hash];
+    matches[hash] = cursor;
+    if (
+      match < 0
+      || cursor - match > 0xffff
+      || bytes[match] !== bytes[cursor]
+      || bytes[match + 1] !== bytes[cursor + 1]
+      || bytes[match + 2] !== bytes[cursor + 2]
+      || bytes[match + 3] !== bytes[cursor + 3]
+    ) {
+      cursor += 1;
+      continue;
+    }
+
+    const matchOffset = cursor - match;
+    let matchEnd = cursor + 4;
+    const matchLimit = bytes.length - 5;
+    while (matchEnd < matchLimit && bytes[matchEnd] === bytes[matchEnd - matchOffset]) {
+      matchEnd += 1;
+    }
+
+    const literalLength = cursor - anchor;
+    const matchLength = matchEnd - cursor;
+    const matchCode = matchLength - 4;
+    writeByte((Math.min(literalLength, 15) << 4) | Math.min(matchCode, 15));
+    if (literalLength >= 15) writeExtendedLength(literalLength - 15);
+    writeBytes(anchor, cursor);
+    writeByte(matchOffset & 0xff);
+    writeByte(matchOffset >>> 8);
+    if (matchCode >= 15) writeExtendedLength(matchCode - 15);
+
+    const matchStart = cursor;
+    cursor = matchEnd;
+    anchor = cursor;
+    for (let position = matchStart + 1; position < cursor && position + 4 <= bytes.length; position += 1) {
+      matches[hashAt(position)] = position;
+    }
+  }
+
+  const literalLength = bytes.length - anchor;
+  writeByte(Math.min(literalLength, 15) << 4);
+  if (literalLength >= 15) writeExtendedLength(literalLength - 15);
+  writeBytes(anchor, bytes.length);
+  return output.slice(0, outputLength);
+}
+
+function hasTransparency(image, pixelCount) {
+  if (!(image instanceof Uint8ClampedArray) || image.length !== pixelCount * 4) return false;
+  for (let pixel = 0; pixel < pixelCount; pixel += 1) {
+    if (image[pixel * 4 + 3] !== 255) return true;
+  }
+  return false;
+}
+
+function createLz4Payload(layer, sourceItem) {
+  const imageSize = layer.width * layer.height;
+  const frameOffsets = [];
+  const framePayloads = [];
+  let payloadSize = 0;
+
+  for (let imageIndex = 0; imageIndex < layer.imgCount; imageIndex += 1) {
+    const sourceFormat = sourceItem?.frameFormats?.[imageIndex] ?? sourceItem?.frameFormats?.[0];
+    const rgba = layer.images?.[imageIndex];
+    const pixelFormat = sourceFormat === 0x301 || hasTransparency(rgba, imageSize) ? 0x301 : 0x200;
+    const bytesPerPixel = pixelFormat === 0x301 ? 3 : 2;
+    const pixels = new Uint8Array(imageSize * bytesPerPixel);
+    for (let pixel = 0; pixel < imageSize; pixel += 1) {
+      const packed = layer.packedPixels[imageIndex * imageSize + pixel];
+      pixels[pixel * bytesPerPixel] = packed & 0xff;
+      pixels[pixel * bytesPerPixel + 1] = packed >>> 8;
+      if (pixelFormat === 0x301) {
+        pixels[pixel * bytesPerPixel + 2] = rgba?.length === imageSize * 4
+          ? rgba[pixel * 4 + 3]
+          : (layer.copyImage || packed !== 0 ? 255 : 0);
+      }
+    }
+    const compressed = compressLz4Block(pixels);
+    frameOffsets.push(payloadSize);
+    framePayloads.push({ compressed, pixelFormat });
+    payloadSize += LZ4_FRAME_HEADER_SIZE + compressed.length;
+  }
+
+  const bytes = new Uint8Array(payloadSize);
+  const view = new DataView(bytes.buffer);
+  let cursor = 0;
+  framePayloads.forEach(({ compressed, pixelFormat }) => {
+    view.setUint16(cursor + 4, layer.width, true);
+    view.setUint16(cursor + 6, layer.height, true);
+    view.setUint32(cursor + 8, pixelFormat, true);
+    view.setUint32(cursor + 12, compressed.length, true);
+    view.setUint32(cursor + 16, LZ4_FRAME_MAGIC, true);
+    bytes.set(compressed, cursor + LZ4_FRAME_HEADER_SIZE);
+    cursor += LZ4_FRAME_HEADER_SIZE + compressed.length;
+  });
+  return { bytes, frameOffsets };
 }
 
 export function isClockFaceEditProject(project) {
@@ -473,7 +712,14 @@ export function parseWatchface(input) {
   const expectedCrc = readU32(view, 8);
   const width = readU16(view, 12);
   const height = readU16(view, 14);
-  const compressed = (readU32(view, 16) & 0xffffff00) === COMPRESS_FORMAT;
+  const compressionFlags = [readU32(view, 16), readU32(view, 20)];
+  const compressionCode = compressionFlags[0] & 0xffffff00;
+  const compressionFormat = compressionCode === COMPRESS_FORMAT
+    ? 'legacy'
+    : compressionCode === LZ4_COMPRESS_FORMAT
+      ? 'lz4'
+      : 'none';
+  const compressed = compressionFormat !== 'none';
   assert(width > 0 && height > 0 && width <= 4096 && height <= 4096, 'The BIN has invalid watch-face dimensions.');
   assert(dataSize <= bytes.length - HEADER_SIZE, 'The BIN header declares data beyond the end of the file.');
   const bodyEnd = HEADER_SIZE + dataSize;
@@ -519,9 +765,10 @@ export function parseWatchface(input) {
   const bodyBytes = bytes.subarray(0, bodyEnd);
   items.forEach((item) => {
     assert(item.offset >= imageDataStart && item.offset < bodyEnd, `Image data for ${item.name} points outside the BIN image area.`);
-    const decoded = decodeItemImages(bodyBytes, item, compressed);
+    const decoded = decodeItemImages(bodyBytes, item, compressionFormat);
     item.images = decoded.images;
     item.packedPixels = decoded.packedPixels;
+    if (decoded.frameFormats) item.frameFormats = decoded.frameFormats;
     item.truncatedBytes = decoded.truncatedBytes || 0;
   });
 
@@ -532,6 +779,8 @@ export function parseWatchface(input) {
     items,
     bytes: bytes.slice(),
     compressed,
+    compressionFormat,
+    compressionFlags,
     truncatedItems: items.filter((item) => item.truncatedBytes > 0).map(({ id, name, truncatedBytes }) => ({ id, name, truncatedBytes })),
     checksumValid: actualCrc === expectedCrc,
     checksum: expectedCrc,
@@ -590,6 +839,9 @@ export function writeWatchface(document, layers) {
     if (!(packedPixels instanceof Uint16Array) || packedPixels.length !== pixelCount) {
       throw new Error(`Image data for ${layer.name} does not match its dimensions.`);
     }
+    if (document.compressionFormat === 'lz4') {
+      return createLz4Payload(layer, sourceItems.get(layer.id));
+    }
     if (document.compressed && isCompressedItem(layer.id)) {
       const imageSize = layer.width * layer.height;
       const frames = [];
@@ -610,7 +862,7 @@ export function writeWatchface(document, layers) {
         payload.set(frame, payloadOffset);
         payloadOffset += frame.length;
       }
-      return payload;
+      return { bytes: payload, frameOffsets: [] };
     }
 
     const payload = new Uint8Array(pixelCount * 2);
@@ -618,13 +870,16 @@ export function writeWatchface(document, layers) {
       payload[pixel * 2] = packed >>> 8;
       payload[pixel * 2 + 1] = packed & 0xff;
     });
-    return payload;
+    return { bytes: payload, frameOffsets: [] };
   });
-  const payloadSize = payloads.reduce((total, payload) => total + payload.length, 0);
+  const payloadSize = payloads.reduce((total, payload) => total + payload.bytes.length, 0);
   const bytes = new Uint8Array(dataStart + payloadSize);
   bytes.set(document.bytes.subarray(0, HEADER_SIZE));
   const view = new DataView(bytes.buffer);
-  if (document.compressed) {
+  if (document.compressionFormat === 'lz4') {
+    view.setUint32(16, document.compressionFlags[0], true);
+    view.setUint32(20, document.compressionFlags[1], true);
+  } else if (document.compressed) {
     view.setUint32(16, COMPRESS_FORMAT, true);
     view.setUint32(20, 0xffffff15, true);
   } else {
@@ -647,8 +902,12 @@ export function writeWatchface(document, layers) {
     bytes[recordOffset + 17] = layer.copyImage ? 1 : 0;
     if (layer.clockHandsInfo) bytes.set(layer.clockHandsInfo, recordOffset + 20);
 
-    bytes.set(payloads[index], dataOffset);
-    dataOffset += payloads[index].length;
+    bytes.set(payloads[index].bytes, dataOffset);
+    payloads[index].frameOffsets.forEach((frameOffset) => {
+      const absoluteOffset = dataOffset + frameOffset;
+      view.setUint32(absoluteOffset, absoluteOffset, true);
+    });
+    dataOffset += payloads[index].bytes.length;
   });
 
   view.setUint32(4, bytes.length - HEADER_SIZE, true);
