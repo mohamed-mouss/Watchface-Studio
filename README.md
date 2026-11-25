@@ -11,14 +11,15 @@
 </p>
 
 <p align="center">
-  <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=windows,electron,react,js,)](https://skillicons.dev" />
-  </a>
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Desktop-blue?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/Electron-Desktop%20App-47848F?style=flat-square&logo=electron" alt="Electron">
+  <img src="https://img.shields.io/badge/React-Powered-61DAFB?style=flat-square&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/License-Open%20Source-green?style=flat-square" alt="Open Source">
 </p>
 
 ---
 
-## 🖥️ App Preview
+## 🖥️ Application Preview
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/mohamed-mouss/Watchface-Studio/refs/heads/main/images/app.png" alt="Watchface Studio Application Screenshot" width="100%">
@@ -68,7 +69,7 @@ The project includes two editing solutions:
 
 ## 🖥️ React / Electron Desktop Editor
 
-The desktop editor supports the MK66 / QX11 / P32D BIN format used by the C++ application, including supported compressed watch face data.
+The desktop editor supports the MK66 / QX11 / P32D BIN format used by the C++ application, including legacy row-compressed BINs and v3 LZ4 frames with RGB555 or RGB555-plus-alpha pixels.
 
 It also supports the supplied Da Fit Type C (`0x81` / `0x84`) BIN format through a separate format path.
 
