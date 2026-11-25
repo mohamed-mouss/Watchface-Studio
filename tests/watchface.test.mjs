@@ -72,6 +72,91 @@ function makeCompressedBin() {
   return data;
 }
 
+function makeLz4LiteralBin() {
+  const items = [
+    {
+      id: 4,
+      width: 2,
+      height: 1,
+      x: 10,
+      y: 20,
+      copyImage: 1,
+      frames: [
+        { format: 0x301, pixels: [0xff, 0xff, 0xff, 0x00, 0x00, 0x00] },
+        { format: 0x301, pixels: [0x00, 0xf8, 0x80, 0xc0, 0x07, 0xff] },
+      ],
+    },
+    {
+      id: 17,
+      width: 1,
+      height: 1,
+      x: 0,
+      y: 0,
+      copyImage: 0,
+      frames: [{ format: 0x200, pixels: [0x00, 0xf8] }],
+    },
+  ];
+  const tableEnd = 24 + items.length * 24 + 2;
+  const blocks = items.map((item) => item.frames.map((frame) => {
+    const literalLength = frame.pixels.length;
+    const extensionLength = Math.max(0, literalLength - 15);
+    const extensionBytes = literalLength < 15 ? 0 : Math.floor(extensionLength / 255) + 1;
+    const compressed = new Uint8Array(1 + extensionBytes + literalLength);
+    compressed[0] = Math.min(literalLength, 15) << 4;
+    let cursor = 1;
+    if (literalLength >= 15) {
+      let remaining = extensionLength;
+      while (remaining >= 255) {
+        compressed[cursor] = 255;
+        cursor += 1;
+        remaining -= 255;
+      }
+      compressed[cursor] = remaining;
+      cursor += 1;
+    }
+    compressed.set(frame.pixels, cursor);
+    const block = new Uint8Array(20 + compressed.length);
+    const view = new DataView(block.buffer);
+    view.setUint16(4, item.width, true);
+    view.setUint16(6, item.height, true);
+    view.setUint32(8, frame.format, true);
+    view.setUint32(12, compressed.length, true);
+    view.setUint32(16, 0xcccc0102, true);
+    block.set(compressed, 20);
+    return block;
+  }));
+  const totalSize = blocks.flat().reduce((total, block) => total + block.length, tableEnd);
+  const data = new Uint8Array(totalSize);
+  const view = new DataView(data.buffer);
+  view.setUint32(0, 0x4e49422e, true);
+  view.setUint16(12, 240, true);
+  view.setUint16(14, 280, true);
+  view.setUint32(16, 0x03ff0101, true);
+  view.setUint32(20, 0xffffff0e, true);
+  let dataOffset = tableEnd;
+
+  items.forEach((item, index) => {
+    const tableOffset = 24 + index * 24;
+    view.setUint16(tableOffset, item.id, true);
+    view.setUint16(tableOffset + 2, item.width, true);
+    view.setUint32(tableOffset + 4, dataOffset, true);
+    view.setUint16(tableOffset + 8, item.height, true);
+    view.setUint16(tableOffset + 10, item.x, true);
+    view.setUint16(tableOffset + 12, item.y, true);
+    data[tableOffset + 16] = item.frames.length;
+    data[tableOffset + 17] = item.copyImage;
+
+    item.frames.forEach((frame, frameIndex) => {
+      const block = blocks[index][frameIndex];
+      view.setUint32(dataOffset, dataOffset, true);
+      data.set(block.subarray(4), dataOffset + 4);
+      dataOffset += block.length;
+    });
+  });
+  updateChecksum(data);
+  return data;
+}
+
 function updateChecksum(data) {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
   view.setUint32(4, data.length - 24, true);
@@ -123,6 +208,74 @@ test('decodes compressed C++ watch-face sprite rows', () => {
   assert.equal(parsed.items[0].images[0].length, 8);
   assert.deepEqual([...parsed.items[0].packedPixels], [0xffff, 0xffff]);
   assert.equal(parsed.checksumValid, true);
+});
+
+test('decodes and edits v3 LZ4 frames with RGB555 and per-pixel alpha', () => {
+  const original = makeLz4LiteralBin();
+  const parsed = parseWatchface(original);
+  assert.equal(parsed.compressed, true);
+  assert.equal(parsed.compressionFormat, 'lz4');
+  assert.deepEqual(parsed.compressionFlags, [0x03ff0101, 0xffffff0e]);
+  assert.equal(parsed.checksumValid, true);
+
+  const digits = parsed.items.find((item) => item.id === 4);
+  assert.deepEqual(digits.frameFormats, [0x301, 0x301]);
+  assert.deepEqual([...digits.packedPixels], [0xffff, 0, 0xf800, 0x07c0]);
+  assert.deepEqual([...digits.images[0]], [248, 248, 248, 255, 0, 0, 0, 0]);
+  assert.deepEqual([...digits.images[1]], [248, 0, 0, 128, 0, 248, 0, 255]);
+
+  const moved = writeWatchface(parsed, parsed.items.map((item) => (
+    item.id === 4 ? { ...item, x: item.x + 1 } : item
+  )));
+  const movedParsed = parseWatchface(moved);
+  assert.equal(movedParsed.compressionFormat, 'lz4');
+  assert.deepEqual(moved.subarray(digits.offset), original.subarray(digits.offset));
+  assert.equal(movedParsed.items.find((item) => item.id === 4).x, digits.x + 1);
+  assert.equal(movedParsed.checksumValid, true);
+
+  const replacement = {
+    ...digits,
+    modified: true,
+    packedPixels: new Uint16Array([0x001f, 0xffff, 0x07c0, 0]),
+    images: [
+      new Uint8ClampedArray([0, 0, 248, 255, 248, 248, 248, 128]),
+      new Uint8ClampedArray([0, 248, 0, 255, 0, 0, 0, 0]),
+    ],
+  };
+  const edited = parseWatchface(writeWatchface(parsed, [
+    replacement,
+    parsed.items.find((item) => item.id === 17),
+  ]));
+  const reopenedDigits = edited.items.find((item) => item.id === 4);
+  assert.equal(edited.compressionFormat, 'lz4');
+  assert.deepEqual([...reopenedDigits.packedPixels], [...replacement.packedPixels]);
+  assert.deepEqual([...reopenedDigits.images[0]], [...replacement.images[0]]);
+  assert.deepEqual(reopenedDigits.frameFormats, [0x301, 0x301]);
+  assert.equal(edited.checksumValid, true);
+
+  const expandedPixels = new Uint16Array(100);
+  const expandedImage = new Uint8ClampedArray(100 * 4);
+  for (let pixel = 0; pixel < 100; pixel += 1) {
+    const packed = (pixel * 197 + 17) & 0x7fff;
+    expandedPixels[pixel] = packed;
+    expandedImage.set([
+      ((packed >>> 11) & 0x1f) << 3,
+      ((packed >>> 6) & 0x1f) << 3,
+      (packed & 0x1f) << 3,
+      (pixel * 73 + 19) & 0xff,
+    ], pixel * 4);
+  }
+  const expanded = parseWatchface(writeWatchface(parsed, [
+    { ...digits, width: 100, height: 1, imgCount: 1, modified: true, packedPixels: expandedPixels, images: [expandedImage] },
+    parsed.items.find((item) => item.id === 17),
+  ]));
+  assert.deepEqual([...expanded.items.find((item) => item.id === 4).packedPixels], [...expandedPixels]);
+
+  const exactLength = parseWatchface(writeWatchface(parsed, [
+    { ...digits, width: 5, height: 1, imgCount: 1, modified: true, packedPixels: expandedPixels.slice(0, 5), images: [expandedImage.slice(0, 20)] },
+    parsed.items.find((item) => item.id === 17),
+  ]));
+  assert.deepEqual([...exactLength.items.find((item) => item.id === 4).packedPixels], [...expandedPixels.slice(0, 5)]);
 });
 
 test('positions clock hands around the ClockFaceEdit pivot and rotates their selection bounds', () => {
